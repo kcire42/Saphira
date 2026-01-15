@@ -1,5 +1,5 @@
 import requests
-from LLM_Integration.config import OLLAMA_API_URL, MODEL_NAME , REQUEST_TIMEOUT_SECONDS
+from config import OLLAMA_API_URL, MODEL_NAME , REQUEST_TIMEOUT_SECONDS
 from LLMGetInfo.doc.getLLMContext import getdocContext
 
 def getLLMResponse(prompt: str) -> str:

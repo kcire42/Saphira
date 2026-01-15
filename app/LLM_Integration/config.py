@@ -6,7 +6,7 @@ ENV = os.getenv('APP','local')
 # ===================
 OLLAMA_HOST = os.getenv('OLLAMA_HOST','localhost' if ENV == 'local' else 'ollama')
 OLLAMA_PORT = int(os.getenv('OLLAMA_PORT',11434))
-MODEL_NAME = os.getenv('MODEL_NAME','phi3:mini')
+MODEL_NAME = os.getenv('MODEL_NAME','meta-llama/Llama-3.1-8B')
 OLLAMA_API_URL = f'http://{OLLAMA_HOST}:{OLLAMA_PORT}/api/generate'
 
 
@@ -28,4 +28,4 @@ CHROMA_API_URL = f'http://{OLLAMA_HOST}:{CHROMA_PORT}'
 #=================
 #RUNTIME
 #================
-REQUEST_TIMEOUT_SECONDS = int(os.getenv("REQUEST_TIMEOUT_SECONDS", 90))
+REQUEST_TIMEOUT_SECONDS = int(os.getenv("REQUEST_TIMEOUT_SECONDS", 180))
