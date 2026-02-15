@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from LLM_Integration.LLMPrompt import getLLMResponse
+from app.LLM_Integration.LLMPrompt import getLLMResponse
 
 questionRouter = APIRouter(prefix='/ask')
 

@@ -1,5 +1,5 @@
 import os
-from config import EMBEDDING_MODEL_NAME
+from .config import EMBEDDING_MODEL_NAME
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 
 def download():

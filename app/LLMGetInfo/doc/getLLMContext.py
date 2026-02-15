@@ -1,7 +1,7 @@
 import chromadb
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import SentenceTransformerEmbeddings
-from LLM_Integration.config import CHROMA_COLLECTION_NAME, CHROMA_HOST, CHROMA_PORT, EMBEDDING_MODEL_NAME
+from app.LLM_Integration.config import CHROMA_COLLECTION_NAME, CHROMA_HOST, CHROMA_PORT, EMBEDDING_MODEL_NAME
 
 _embedding_model = SentenceTransformerEmbeddings(model_name=EMBEDDING_MODEL_NAME)
 
@@ -17,7 +17,7 @@ def getdocContext(prompt: str) -> str:
             embedding_function=_embedding_model
         )
         # Perform a similarity search to retrieve the top-k most relevant documents
-        results = vector_store.similarity_search(prompt, k=3)
+        results = vector_store.similarity_search(prompt, k=6)
         # Concatenate the retrieved document contents into a single context string
         docContext = "\n---\n".join([doc.page_content for doc in results])
         return docContext

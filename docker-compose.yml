@@ -11,10 +11,8 @@ services:
     restart: unless-stopped
     entrypoint: /bin/sh
     command: -c "ollama serve & sleep 5 && ollama pull llama3.1:8b && wait"
- 
-
-    # networks:
-    #   - isolated_backend
+    networks:
+      - isolated_backend
   
   chroma:
     image: chromadb/chroma
@@ -24,10 +22,8 @@ services:
     volumes:
       - chroma_data:/chroma/data
     restart: unless-stopped
-
-
-    # networks:
-    #   - isolated_backend
+    networks:
+      - isolated_backend
 
   postgres:
     image: postgres:14-alpine
@@ -63,6 +59,7 @@ services:
       - CHROMA_HOST=chroma
       - DB_HOST=postgres
       - MODEL_NAME=llama3.1:8b
+      - PYTHONPATH=/app
     depends_on:
       postgres:
         condition: service_healthy 

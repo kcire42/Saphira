@@ -1,6 +1,6 @@
 import os 
 
-ENV = os.getenv('APP','local')
+ENV = os.getenv('APP_ENV','local')
 # ====================
 # OLLAMA
 # ===================
@@ -22,7 +22,7 @@ EMBEDDING_MODEL_NAME = os.getenv('EMBEDDING_MODEL_NAME','all-MiniLM-L6-v2')
 CHROMA_HOST = os.getenv('CHROMA_HOST','localhost' if ENV == 'local' else 'chroma')
 CHROMA_PORT = int(os.getenv('OLLAMA_PORT',11743))
 CHROMA_COLLECTION_NAME = os.getenv("CHROMA_COLLECTION_NAME","Knowledgebase")
-CHROMA_API_URL = f'http://{OLLAMA_HOST}:{CHROMA_PORT}'
+CHROMA_API_URL = f'http://{CHROMA_HOST}:{CHROMA_PORT}'
 
 
 #=================

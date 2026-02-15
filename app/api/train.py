@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from RAG.trainData import trainRagData
+from app.RAG.trainData import trainRagData
 
 trainRouter = APIRouter(prefix='/train')
 

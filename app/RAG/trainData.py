@@ -4,7 +4,7 @@ from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import SentenceTransformerEmbeddings
-from LLM_Integration.config import CHROMA_API_URL, CHROMA_COLLECTION_NAME, REQUEST_TIMEOUT_SECONDS, OLLAMA_HOST, CHROMA_PORT
+from app.LLM_Integration.config import CHROMA_API_URL, CHROMA_COLLECTION_NAME, REQUEST_TIMEOUT_SECONDS, CHROMA_HOST, CHROMA_PORT, EMBEDDING_MODEL_NAME
 
 
 # =========================
@@ -16,7 +16,7 @@ DOCS_PATH = './KnowledgeBase/'
 
 # Modelo de embeddings a utilizar (Sentence Transformers)
 # all-MiniLM-L6-v2 es ligero, rápido y muy usado para RAG
-EMBEDDING_MODEL_NAME = 'all-MiniLM-L6-v2'
+
 
 
 # =========================
@@ -50,19 +50,19 @@ def trainRagData():
         print("No documents found to index.")
         return
     
-    print(f"Loaded {len(documents)} documents.")
+    print(f"✅ Success: Loaded {len(documents)} documents.")
 
     # ---- DIVISIÓN DEL TEXTO EN CHUNKS ----
     # Se divide el texto para que los embeddings tengan contexto manejable
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,        # Tamaño máximo de cada fragmento
-        chunk_overlap=120,      # Texto compartido entre fragmentos
+        chunk_size=1000,        # Tamaño máximo de cada fragmento
+        chunk_overlap=200,      # Texto compartido entre fragmentos
         separators=["\n\n", "\n", " ", "", "."]  # Orden de separación
     )
 
     # Genera los fragmentos a partir de los documentos originales
     chunks = text_splitter.split_documents(documents)
-    print(f"Split documents into {len(chunks)} chunks.")
+    print(f"✅ Success: Split documents into {len(chunks)} chunks.")
 
     # ---- CREACIÓN DE EMBEDDINGS ----
     print("Creating embeddings using model:", EMBEDDING_MODEL_NAME)
@@ -76,7 +76,7 @@ def trainRagData():
         print("Error creating embedding model:", e)
         return
     
-    print("Embeddings created successfully.")
+    print("✅ Success: Embeddings created successfully.")
 
     # ---- CONEXIÓN A CHROMA ----
     print("Connecting to Chroma vector store at:", CHROMA_API_URL)
@@ -87,20 +87,20 @@ def trainRagData():
     try:
         # Cliente HTTP para conectarse a Chroma (servidor externo)
         chroma_client = chromadb.HttpClient(
-            host=OLLAMA_HOST,
+            host=CHROMA_HOST,
             port=CHROMA_PORT
         )
 
         # Intenta eliminar la colección existente
         # (útil para reindexar desde cero)
-        try:
-            chroma_client.delete_collection(
-                name=CHROMA_COLLECTION_NAME
-            )
-            print(f"Deleted existing collection: {CHROMA_COLLECTION_NAME}")
-        except Exception:
-            # Si no existe la colección, se ignora el error
-            pass
+        # try:
+        #     chroma_client.delete_collection(
+        #         name=CHROMA_COLLECTION_NAME
+        #     )
+        #     print(f"Deleted existing collection: {CHROMA_COLLECTION_NAME}")
+        # except Exception:
+        #     # Si no existe la colección, se ignora el error
+        #     pass
 
         # ---- INDEXACIÓN EN CHROMA ----
         vector_store = Chroma.from_documents(

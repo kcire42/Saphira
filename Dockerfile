@@ -2,6 +2,7 @@ FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 
 WORKDIR /app
 # Copiar solo requirements primero (optimiza cache)
@@ -15,7 +16,7 @@ RUN apt-get update && apt-get install -y libpq-dev gcc \
 
 # Copiar el resto del código de la app
 COPY . .
-RUN python app/LLM_Integration/downloadModels.py
+RUN python -m app.LLM_Integration.downloadModels
 
 EXPOSE 8000
 
