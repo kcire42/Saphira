@@ -5,14 +5,13 @@ services:
     container_name: llm_service
     ports:
       - "11434:11434"
-      
     volumes:
-      - ollama_data:/root/.ollama
+      - C:/Users/carrie5/.ollama:/root/.ollama
     restart: unless-stopped
-    entrypoint: /bin/sh
-    command: -c "ollama serve & sleep 5 && ollama pull llama3.1:8b && wait"
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
     networks:
-      - isolated_backend
+       - isolated_backend
   
   chroma:
     image: chromadb/chroma
@@ -23,7 +22,8 @@ services:
       - chroma_data:/chroma/data
     restart: unless-stopped
     networks:
-      - isolated_backend
+       - isolated_backend
+
 
   postgres:
     image: postgres:14-alpine
@@ -67,6 +67,8 @@ services:
         condition: service_started
       chroma:
         condition: service_started
+    networks:
+       - isolated_backend
 
 volumes:
   ollama_data:

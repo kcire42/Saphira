@@ -4,7 +4,7 @@ ENV = os.getenv('APP_ENV','local')
 # ====================
 # OLLAMA
 # ===================
-OLLAMA_HOST = os.getenv('OLLAMA_HOST','localhost' if ENV == 'local' else 'ollama')
+OLLAMA_HOST = 'ollama' if ENV == 'docker' else 'localhost'
 OLLAMA_PORT = int(os.getenv('OLLAMA_PORT',11434))
 MODEL_NAME = os.getenv('MODEL_NAME','meta-llama/Llama-3.1-8B')
 OLLAMA_API_URL = f'http://{OLLAMA_HOST}:{OLLAMA_PORT}/api/generate'
@@ -19,8 +19,8 @@ EMBEDDING_MODEL_NAME = os.getenv('EMBEDDING_MODEL_NAME','all-MiniLM-L6-v2')
 #CHROMA
 #===================
 
-CHROMA_HOST = os.getenv('CHROMA_HOST','localhost' if ENV == 'local' else 'chroma')
-CHROMA_PORT = int(os.getenv('OLLAMA_PORT',11743))
+CHROMA_HOST = 'chroma' if ENV == 'docker' else 'localhost'
+CHROMA_PORT = 8000 if ENV == 'docker' else 11743
 CHROMA_COLLECTION_NAME = os.getenv("CHROMA_COLLECTION_NAME","Knowledgebase")
 CHROMA_API_URL = f'http://{CHROMA_HOST}:{CHROMA_PORT}'
 

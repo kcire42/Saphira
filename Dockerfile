@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y libpq-dev gcc \
 
 # Copiar el resto del código de la app
 COPY . .
+
+RUN ls -la /app/model_cache
+
 RUN python -m app.LLM_Integration.downloadModels
 
 EXPOSE 8000

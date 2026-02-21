@@ -1,9 +1,24 @@
 import chromadb
+import os 
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 from app.LLM_Integration.config import CHROMA_COLLECTION_NAME, CHROMA_HOST, CHROMA_PORT, EMBEDDING_MODEL_NAME
 
-_embedding_model = SentenceTransformerEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+MODEL_PATH = "/app/model_cache"
+
+print(f"→ Loading embeddings from: {MODEL_PATH}")
+try:
+    # Initialization pointing to the local folder
+    _embedding_model = SentenceTransformerEmbeddings(
+        model_name=MODEL_PATH,
+        model_kwargs={'device': 'cpu'}
+    )
+    print("✅ Embedding model successfully loaded offline.")
+except Exception as e:
+    print(f"❌ Error loading local model: {e}")
+    # Optional: print what is in the folder for debugging
+    if os.path.exists(MODEL_PATH):
+        print(f"Contents of {MODEL_PATH}: {os.listdir(MODEL_PATH)}")
 
 def getdocContext(prompt: str) -> str:
     try:
