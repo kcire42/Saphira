@@ -6,7 +6,7 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - C:/Users/carrie5/.ollama:/root/.ollama
+      - ollama_data:/root/.ollama
     restart: unless-stopped
     environment:
       - OLLAMA_KEEP_ALIVE=24h
@@ -25,26 +25,6 @@ services:
        - isolated_backend
 
 
-  postgres:
-    image: postgres:14-alpine
-    container_name: DBTesting_compose
-    environment:
-      # Los mismos valores de tu comando docker run
-      POSTGRES_USER: kcire
-      POSTGRES_PASSWORD: 123456
-      POSTGRES_DB: dbLLM
-    ports:
-      # Exponemos el puerto para que puedas conectarte desde tu máquina
-      - "5433:5432"
-    volumes:
-      # Usamos el mismo volumen nombrado que creaste para mantener tus datos
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kcire -d dbLLM"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   web:
     build: .
     container_name: fastapi_llm
@@ -57,12 +37,9 @@ services:
       - APP_ENV=docker
       - OLLAMA_HOST=ollama
       - CHROMA_HOST=chroma
-      - DB_HOST=postgres
       - MODEL_NAME=llama3.1:8b
       - PYTHONPATH=/app
     depends_on:
-      postgres:
-        condition: service_healthy 
       ollama:
         condition: service_started
       chroma:
@@ -73,7 +50,6 @@ services:
 volumes:
   ollama_data:
   chroma_data:
-  postgres_data:
 
 networks:
   isolated_backend:

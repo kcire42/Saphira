@@ -8,21 +8,20 @@ def getLLMResponse(prompt: str) -> str:
 
 def routeQuestionToLLM(prompt: str) -> str:
     ROUTER_PROMPT = """
-    You are an intelligent intent classifier for an Industrial SCADA system.
+    Eres el clasificador de intención de un asistente personal inteligente.
+    Tu trabajo es dirigir la duda del usuario a la fuente de datos correcta.
     
-    Your job is to route the user's question to the correct data source.
+    DEFINICIONES:
+    - RAG_ONLY: Consultas sobre mis notas, reflexiones, resúmenes de libros, guías que he guardado o "cómo hacer algo" según mis propios documentos.
+    - SQL_ONLY: Consultas de datos numéricos o registros específicos en mi base de datos (ej: "cuánto gasté", "cuántos pasos di", "a qué hora me dormí", "cuánta agua tomé").
+    - HYBRID: Cuando pido un análisis que cruza mis notas con mis datos (ej: "¿Cómo afectó mi café de la tarde a mi sueño de anoche?").
     
-    DEFINITIONS:
-    - RAG_ONLY: Use this for questions about "How to configure", "How to create", "Steps", "Definitions", "Manuals", "GUI navigation", or "Ignition Designer".
-    - SQL_ONLY: Use this ONLY for questions asking for specific numerical values from the database (e.g., "What is the temperature?", "How many alarms?", "Show me the last 5 values").
-    - HYBRID: Use this when the user asks for a value AND an explanation of what it means contextually.
-    
-    User Question:
+    Pregunta del Usuario:
     {prompt}
     
-    OUTPUT RULES:
-    - Respond ONLY with one of the three words: RAG_ONLY, SQL_ONLY, or HYBRID.
-    - Do not add punctuation or explanation.
+    REGLAS DE SALIDA:
+    - Responde ÚNICAMENTE con una de las tres palabras: RAG_ONLY, SQL_ONLY, o HYBRID.
+    - Sin puntos ni explicaciones.
     """
     response = callLLM(ROUTER_PROMPT.format(prompt=prompt))
     return response
@@ -41,46 +40,40 @@ def routeAnswerToLLM(prompt: str) -> str:
 def ragAnswerToLLM(prompt: str) -> str:
     docContext = getdocContext(prompt)
     RAGPrompt = f"""
-    You are an expert technical consultant for this Ignition project.
+    Eres mi asistente personal y mentor. Tu tono es cálido, alentador y organizado.
         
-        SOURCE MATERIAL:
-        {docContext}
-        
-        USER QUESTION:
-        {prompt}
-        
-        INSTRUCTIONS:
-        1. Base your answer PRIMARILY on the "SOURCE MATERIAL".
-        2. INTERPRETATION ALLOWED: If the text describes a process in a sentence (e.g., "Right click folder and select X"), convert it into clear numbered steps.
-        3. LOOK FOR: Specific keywords like "New Tag", "Data Type Instance", "UDT", or specific folder names mentioned in the text.
-        4. PROPERTIES: List specific tag parameters mentioned (like _ResourceID, FailedPartCount) if present.
-        5. If the text mentions a specific example (like "Rezum line" or "Arden Hills"), use it as an example.
-        
-        Format your answer as:
-        **Concept** → Explanation
-        **Configuration Steps:**
-        1. Step one
-        2. Step two...
-        
-        Answer:
-                """
+    MEMORIA DISPONIBLE (Mis notas y documentos):
+    {docContext}
+    
+    PREGUNTA:
+    {prompt}
+    
+    INSTRUCCIONES:
+    1. Responde basándote en mis notas de forma natural (ej: "En tus notas sobre X, mencionaste...").
+    2. Si explicas un proceso personal, usa pasos numerados claros.
+    3. Si menciono una meta o hábito en el texto, recuérdamelo con entusiasmo.
+    
+    Formato de respuesta:
+    **Enfoque** → Breve resumen
+    **Pasos sugeridos / Recordatorios:**
+    1. Punto uno
+    2. Punto dos...
+    """
     return callLLM(RAGPrompt)
 
 def sqlAnswerToLLM(prompt: str) -> str:
     sqlResults = "Sample SQL data results relevant to the question."
     SQLPrompt = f"""
-    You are an industrial data analyst.
-    Rules:
-    - Use ONLY the provided data
-    - Do NOT assume missing values
-    - Identify anomalies
-    - Suggest corrective actions
-    - Be concise and technical
+    Eres mi analista de datos personales. 
+    Reglas:
+    - Sé directo pero amable. 
+    - No inventes números que no estén en los datos.
+    - Si ves algo inusual (ej: gasté mucho hoy), coméntalo como un amigo preocupado pero profesional.
 
-    Measured data:
+    Datos registrados:
     {sqlResults}
 
-    User question:
+    Pregunta:
     {prompt}
     """
     return callLLM(SQLPrompt)
@@ -89,21 +82,20 @@ def hybridAnswerToLLM(prompt: str) -> str:
     docContext = getdocContext(prompt)
     sqlResults = "Sample SQL data results relevant to the question."
     hybridPrompt = f"""
-    You are an industrial data analyst.
-    Rules:
-    - Use ONLY the provided data
-    - Do NOT assume missing values
-    - Identify anomalies
-    - Suggest corrective actions
-    - Be concise and technical
-
-    Operational documentation:
+    Eres mi Coach de Vida. Tu objetivo es conectar lo que siento (notas) con lo que hago (datos).
+    
+    Contexto Vital (Notas):
     {docContext}
 
-    Measured data:
+    Métricas (Datos):
     {sqlResults}
 
-    User question:
+    Instrucciones:
+    - Analiza si mis métricas coinciden con mis intenciones o estados de ánimo en las notas.
+    - Ofrece un consejo práctico y humano basado en esta conexión.
+    - Tono: Empático y motivador.
+
+    Pregunta del usuario:
     {prompt}
     """
     return callLLM(hybridPrompt)

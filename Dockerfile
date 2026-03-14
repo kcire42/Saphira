@@ -5,19 +5,25 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
 WORKDIR /app
-# Copiar solo requirements primero (optimiza cache)
-COPY requirements.txt .
-# Instalar dependencias del sistema
 
-RUN apt-get update && apt-get install -y libpq-dev gcc \
-    && pip install --no-cache-dir -r requirements.txt \
-    && apt-get purge -y libpq-dev gcc && apt-get clean \
+# 1. Install system dependencies (build-essential includes gcc and g++)
+# We use --no-install-recommends to avoid bloat and keep the image lightweight
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar el resto del código de la app
+# 2. Copy only requirements first (optimizes Docker cache)
+COPY requirements.txt .
+
+# 3. Upgrade pip and install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
+# 4. Copy the rest of the application code
 COPY . .
 
-RUN ls -la /app/model_cache
+# 5. Verify cache and download LLM models
 
 RUN python -m app.LLM_Integration.downloadModels
 
