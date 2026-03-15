@@ -1,17 +1,17 @@
 
 services:
 
-  # Ingest Process Service
-  ingest_process:
-    build: ./ingest_process
+  # --- Ingest Process Service
+  ingest_service:
+    build: ./ingest_service
     container_name: ingestion_service
     volumes:
       - ./storage/raw:/app/storage/raw
     networks:
       - isolated_backend
-  # clean process Service
-  clean_processor:
-    build: ./clean_processor
+  # --- Clean Process Service
+  clean_service:
+    build: ./clean_service
     container_name: cleaning_service
     volumes:
       - ./storage/clean:/app/storage/process
@@ -20,6 +20,54 @@ services:
     #  - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     networks:
       - isolated_backend
+
+  # --- BASE DE DATOS RELACIONAL (EL CEREBRO ESTRUCTURADO) ---
+  
+  database_service:
+    build: ./database_service
+    container_name: database_service
+    volumes:
+      - ./database_service:/app
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    networks:
+      - isolated_backend
+
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: postgres_service
+    restart: always
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=proweb_pass
+      - POSTGRES_DB=DEV
+    healthcheck: 
+      test: ["CMD-SHELL", "pg_isready -U admin -d DEV"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - isolated_backend
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_ui
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres_db
+    networks:
+      - isolated_backend
+
+  # --- SERVICIOS DE LLM Y VECTOR DB 
 
   ollama:
     image: ollama/ollama
@@ -44,21 +92,6 @@ services:
     restart: unless-stopped
     networks:
        - isolated_backend
-
-  # --- BASE DE DATOS RELACIONAL (EL CEREBRO ESTRUCTURADO) ---
-  postgres_db:
-    image: postgres:15-alpine
-    container_name: postgres_service
-    environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=proweb_pass
-      - POSTGRES_DB= DEV
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - isolated_backend
 
   web:
     build: 
@@ -85,14 +118,9 @@ services:
        - isolated_backend
 
 volumes:
-  ollama_data:
-  chroma_data:
-  postgres_data:
+  ollama:
+  chroma:
+  postgres_db:
 
-networks:
-  isolated_backend:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.25.0.0/24
+
 
