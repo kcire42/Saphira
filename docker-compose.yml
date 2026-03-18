@@ -1,17 +1,33 @@
 
 services:
 
+  portainer: #http://100.76.141.48:9443/
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: always
+    ports:
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - frontend_tools
+
   # --- Ingest Process Service
   ingest_service:
-    build: ./ingest_service
+    build: 
+      context: ./ingest_service
+      dockerfile: Dockerfile
     container_name: ingestion_service
     volumes:
       - ./storage/raw:/app/storage/raw
     networks:
-      - isolated_backend
+      - backend_ai
   # --- Clean Process Service
   clean_service:
-    build: ./clean_service
+    build: 
+      context: ./clean_service
+      dockerfile: Dockerfile
     container_name: cleaning_service
     volumes:
       - ./storage/clean:/app/storage/process
@@ -19,31 +35,20 @@ services:
     #  - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
     #  - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     networks:
-      - isolated_backend
+      - backend_ai
 
   # --- BASE DE DATOS RELACIONAL (EL CEREBRO ESTRUCTURADO) ---
   
-  database_service:
-    build: ./database_service
-    container_name: database_service
-    volumes:
-      - ./database_service:/app
-    depends_on:
-      postgres_db:
-        condition: service_healthy
-    networks:
-      - isolated_backend
-
   postgres_db:
     image: postgres:15-alpine
     container_name: postgres_service
     restart: always
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=proweb_pass
-      - POSTGRES_DB=DEV
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     healthcheck: 
-      test: ["CMD-SHELL", "pg_isready -U admin -d DEV"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -52,7 +57,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - isolated_backend
+      - backend_ai
 
   pgadmin:
     image: dpage/pgadmin4
@@ -65,22 +70,38 @@ services:
     depends_on:
       - postgres_db
     networks:
-      - isolated_backend
+      - frontend_tools
+
+  database_service:
+    build: 
+      context: ./database_service
+      dockerfile: Dockerfile
+    container_name: database_service
+    volumes:
+      - ./database_service:/app
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+    networks:
+      - backend_ai
 
   # --- SERVICIOS DE LLM Y VECTOR DB 
 
   ollama:
     image: ollama/ollama
-    container_name: llm_service
+    container_name: llm_Service
     ports:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+      - ./llm_Service/entrypoint.sh:/entrypoint.sh
     restart: unless-stopped
     environment:
+      - MODEL_NAME=${MODEL_NAME}
       - OLLAMA_KEEP_ALIVE=24h
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
     networks:
-       - isolated_backend
+       - backend_ai
   
   chroma:
     image: chromadb/chroma
@@ -91,10 +112,10 @@ services:
       - chroma_data:/chroma/data
     restart: unless-stopped
     networks:
-       - isolated_backend
+       - backend_ai
 
   web:
-    build: 
+    build:  #https://localhost:8000
       context: ./llm_Service
       dockerfile: Dockerfile
     container_name: fastapi_llm
@@ -114,13 +135,22 @@ services:
         condition: service_started
       chroma:
         condition: service_started
+      postgres_db:
+        condition: service_healthy
     networks:
-       - isolated_backend
+       - backend_ai
 
 volumes:
-  ollama:
-  chroma:
-  postgres_db:
+  ollama_data:
+  chroma_data:
+  postgres_data:
+  portainer_data:
+
+networks:
+  backend_ai:
+    driver: bridge
+  frontend_tools:
+    driver: bridge
 
 
 
