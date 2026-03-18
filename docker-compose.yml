@@ -1,6 +1,22 @@
 
 services:
 
+  # --- PROXY INVERSO (MANEJO DE HTTPS) ---
+  caddy_reverse_proxy:
+    image: caddy:2-alpine
+    container_name: caddy_proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"     # Redirige tráfico HTTP a HTTPS
+      - "443:443"   # Tráfico HTTPS seguro
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile  # Configuración de rutas
+      - caddy_data:/data                  # Guarda los certificados generados
+      - caddy_config:/config
+    networks:
+      - frontend_tools
+      - backend_ai
+
   portainer: #http://100.76.141.48:9443/
     image: portainer/portainer-ce:latest
     container_name: portainer
@@ -84,6 +100,35 @@ services:
         condition: service_healthy
     networks:
       - backend_ai
+  # --- BASE DE DATOS EN MEMORIA (EL CEREBRO DE PROCESAMIENTO RÁPIDO) ---
+  redis:
+    image: redis:7-alpine
+    container_name: redis_service
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    networks:
+      - backend_ai
+  
+  # --- MOTOR DE BÚSQUEDA Y ANÁLISIS DE TEXTO (EL CEREBRO DE PROCESAMIENTO PROFUNDO) ---
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2
+    container_name: elasticsearch_service
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - "9200:9200"
+    volumes:
+      - elastic_data:/usr/share/elasticsearch/data
+    networks:
+      - backend_ai
 
   # --- SERVICIOS DE LLM Y VECTOR DB 
 
@@ -145,6 +190,11 @@ volumes:
   chroma_data:
   postgres_data:
   portainer_data:
+  redis_data:
+  elastic_data:
+  caddy_data:
+  caddy_config:
+
 
 networks:
   backend_ai:

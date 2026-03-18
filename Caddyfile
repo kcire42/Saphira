@@ -1,0 +1,23 @@
+# Redirige el tráfico a tu API (el nombre del contenedor en Docker)
+# Puedes agregar subdominios fácilmente
+# reverse_proxy containerName:port
+
+# FastAPI - Usamos guion medio (-) porque el guion bajo (_) es inválido en DNS
+fastapi-llm.100.76.141.48.nip.io {
+    reverse_proxy fastapi_llm:8000
+}
+
+# pgAdmin
+pgadmin.100.76.141.48.nip.io {
+    reverse_proxy pgadmin_ui:80
+}
+
+# Portainer
+portainer.100.76.141.48.nip.io {
+    # IMPORTANTE: Usamos el puerto 9000 de Portainer porque es el de HTTP.
+    # Caddy recibe HTTPS por fuera y le habla en HTTP por dentro al contenedor.
+    reverse_proxy portainer:9000
+}
+
+
+
