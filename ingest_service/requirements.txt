@@ -1,0 +1,6 @@
+yt-dlp
+ffmpeg
+tqdm
+whisper
+psycopg2
+dotenv

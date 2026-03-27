@@ -27,7 +27,8 @@ def routeQuestionToLLM(prompt: str) -> str:
     return response
 
 def routeAnswerToLLM(prompt: str) -> str:
-    route = routeQuestionToLLM(prompt)
+    data = routeQuestionToLLM(prompt)  
+    route = data.get("response").strip()
     if route == "RAG_ONLY":
         return ragAnswerToLLM(prompt)
     elif route == "SQL_ONLY":
@@ -114,5 +115,11 @@ def callLLM(prompt: str) -> str:
 
     response = requests.post(OLLAMA_API_URL, json=payload, timeout=REQUEST_TIMEOUT_SECONDS)
     response.raise_for_status()
-    answer = response.json()["response"]
-    return answer
+    data = response.json()
+
+    return {
+        "response": data.get("response", ""),
+        "prompt_tokens": data.get("prompt_eval_count", 0),
+        "completion_tokens": data.get("eval_count", 0),
+        "total_duration": data.get("total_duration", 0)
+    }

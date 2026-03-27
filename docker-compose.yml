@@ -1,6 +1,39 @@
 
 services:
 
+    # --- MONITOREO Y LOGGING ---
+  prometheus: #http://100.76.141.48:9090/query
+    image: prom/prometheus
+    container_name: prometheus_service
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - backend_ai
+  
+  # --- INTERFAZ DE VISUALIZACIÓN Y ANÁLISIS DE DATOS ---
+  grafana: #http://100.76.141.48:3000/d/ad2qn7h/monitor?orgId=1&from=now-6h&to=now&timezone=browser
+    image: grafana/grafana:latest
+    container_name: grafana_service
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - backend_ai
+  # --- EXPORTADOR DE MÉTRICAS DEL SISTEMA (CPU, MEMORIA, DISCO, ETC.) ---
+  node_exporter:
+    image: prom/node-exporter
+    container_name: node_exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    networks:
+      - backend_ai
+
   # --- PROXY INVERSO (MANEJO DE HTTPS) ---
   caddy_reverse_proxy:
     image: caddy:2-alpine
@@ -56,7 +89,7 @@ services:
   # --- BASE DE DATOS RELACIONAL (EL CEREBRO ESTRUCTURADO) ---
   
   postgres_db:
-    image: postgres:15-alpine
+    image: ankane/pgvector:latest
     container_name: postgres_service
     restart: always
     environment:
@@ -70,10 +103,18 @@ services:
       retries: 5
     ports:
       - "5432:5432"
+    deploy:
+      resources:
+        limits:
+          memory: 2G 
+        reservations:
+          memory: 512M
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - backend_ai
+    env_file:
+      - .env 
 
   pgadmin:
     image: dpage/pgadmin4
@@ -109,7 +150,18 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    command: ["redis-server", "--appendonly", "yes"]
+    
+    deploy:
+      resources:
+        limits:
+          memory: 1200M # Redis es muy eficiente, 1GB sobra para strings/cache
+    # ✅ Comando para limitar memoria y activar política de borrado automático
+    command: [
+      "redis-server", 
+      "--maxmemory 1gb", 
+      "--maxmemory-policy allkeys-lru", 
+      "--appendonly yes"
+    ]
     networks:
       - backend_ai
   
@@ -122,31 +174,57 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - ES_JAVA_OPTS=-Xms4g -Xmx4g # Asigna 4GB de RAM para Elasticsearch, ajusta según tus necesidades
+      - bootstrap.memory_lock=true
     ports:
       - "9200:9200"
     volumes:
       - elastic_data:/usr/share/elasticsearch/data
+    deploy:
+      resources:
+        limits:
+          memory: 8G # Elasticsearch puede consumir bastante RAM, asigna lo que tu máquina pueda manejar
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    # Añadimos esta capacidad para que Docker pueda gestionar el bloqueo
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - backend_ai
+  
+  # --- INTERFAZ DE VISUALIZACIÓN Y ANÁLISIS DE DATOS ---
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.2
+    container_name: kibana_service
+    restart: unless-stopped
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
     networks:
       - backend_ai
 
   # --- SERVICIOS DE LLM Y VECTOR DB 
 
-  ollama:
-    image: ollama/ollama
-    container_name: llm_Service
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-      - ./llm_Service/entrypoint.sh:/entrypoint.sh
-    restart: unless-stopped
-    environment:
-      - MODEL_NAME=${MODEL_NAME}
-      - OLLAMA_KEEP_ALIVE=24h
-    entrypoint: ["/bin/bash", "/entrypoint.sh"]
-    networks:
-       - backend_ai
+  # ollama:
+  #   image: ollama/ollama
+  #   container_name: llm_Service
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #     - ./llm_Service/entrypoint.sh:/entrypoint.sh
+  #   restart: unless-stopped
+  #   environment:
+  #     - MODEL_NAME=${MODEL_NAME}
+  #     - OLLAMA_KEEP_ALIVE=24h
+  #   entrypoint: ["/bin/bash", "/entrypoint.sh"]
+  #   networks:
+  #      - backend_ai
   
   chroma:
     image: chromadb/chroma
@@ -156,6 +234,10 @@ services:
     volumes:
       - chroma_data:/chroma/data
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G  # Suficiente para desarrollo local
     networks:
        - backend_ai
 
@@ -169,29 +251,37 @@ services:
       - '8000:8000'
     volumes:
       - ./llm_Service:/app
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Permite que el contenedor acceda a servicios en el host (como Ollama)
     environment:
       - APP_ENV=docker
-      - OLLAMA_HOST=ollama
+      - OLLAMA_HOST=host.docker.internal # Permite que el contenedor acceda a Ollama en el host/ cambiar por ip cuando tengamos mac
       - CHROMA_HOST=chroma
-      - MODEL_NAME=llama3.1:8b
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ELASTIC_HOST=http://elasticsearch:9200
+      - MODEL_NAME=${MODEL_NAME}
       - PYTHONPATH=/app
     depends_on:
-      ollama:
-        condition: service_started
+      #ollama:
+      #  condition: service_started
       chroma:
         condition: service_started
       postgres_db:
         condition: service_healthy
     networks:
        - backend_ai
+    env_file:
+      - .env 
 
 volumes:
-  ollama_data:
+  #ollama_data:
   chroma_data:
   postgres_data:
   portainer_data:
   redis_data:
   elastic_data:
+  grafana_data:
   caddy_data:
   caddy_config:
 

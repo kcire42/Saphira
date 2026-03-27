@@ -4,7 +4,7 @@ ENV = os.getenv('APP_ENV','local')
 # ====================
 # OLLAMA
 # ===================
-OLLAMA_HOST = 'ollama' if ENV == 'docker' else 'localhost'
+OLLAMA_HOST = os.getenv('OLLAMA_HOST', 'host.docker.internal' if ENV == 'docker' else 'localhost')
 OLLAMA_PORT = int(os.getenv('OLLAMA_PORT',11434))
 MODEL_NAME = os.getenv('MODEL_NAME','meta-llama/Llama-3.1-8B')
 OLLAMA_API_URL = f'http://{OLLAMA_HOST}:{OLLAMA_PORT}/api/generate'

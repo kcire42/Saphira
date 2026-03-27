@@ -1,2 +1,7 @@
 venv/
 *.pdf
+*.mp3
+*.info.json
+*.env
+*.pt
+.env
