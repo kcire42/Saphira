@@ -40,7 +40,7 @@ def transcribe_audio(model, storage_audio_path, title):
                     print(f"Información adicional para {title}:\n{meta_info}")
                     id_video = meta_info.get('id')
             except Exception as e:
-                print(f"Error al leer metadata para {title}: {e}")
+                print(f"Error al leer metadata para: {title}: {e}")
 
             #print(f"✅ id_video: {id_video}")
             #print(f"Transcripción de {file} con nombre {name_file}:\n{result['text']}")
