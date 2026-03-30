@@ -2,5 +2,5 @@ yt-dlp
 ffmpeg
 tqdm
 whisper
-psycopg2
+psycopg2-binary
 dotenv

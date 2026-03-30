@@ -110,7 +110,7 @@ services:
         reservations:
           memory: 512M
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./Data/postgres/:/var/lib/postgresql/data
     networks:
       - backend_ai
     env_file:
