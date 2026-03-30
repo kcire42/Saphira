@@ -6,3 +6,7 @@ venv/
 *.pt
 .env
 .DS_Store
+.venv/
+__pycache__/
+*.pyc
+*.db
