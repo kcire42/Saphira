@@ -1,6 +1,16 @@
 from datetime import datetime
 from app.Youtube_Extractor.Database.config import Config
 import psycopg2
+import os
+import json
+
+# Carpeta actual del script
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Subir un nivel
+ROOT_DIR = os.path.dirname(BASE_DIR)
+storage_audio_path = os.path.join(ROOT_DIR, 'data')
+MODEL_PATH = os.path.join(ROOT_DIR, 'models')
+
 
 def get_connection():
     print(f"→ Estableciendo conexión a {Config.DB_HOST}, base: {Config.DB_NAME}")
@@ -54,6 +64,25 @@ def register_youtube_ingestion(metadata):
         print(f"❌ Error al ingresar metadata del video '{metadata['title']}': {e}")
         conn.rollback()
 
+def get_video_by_status(status):
+    print(f"→ Consultando videos pendientes de descarga...")
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                        SELECT *
+                        FROM
+                        "youtube".get_pending_videos(
+                        p_status := %s::text
+                        )""", (status,))
+            pending_videos = cur.fetchall()
+        print(f"✅ Se encontraron {len(pending_videos)} videos pendientes.")
+        return pending_videos
+    except Exception as e:
+        print(f"❌ Error al obtener videos pendientes: {e}")
+        return []
+    
+
 def download_youtube_ingestion(metadata):
     print(f"→ Iniciando descarga del video")  
     conn = get_connection()
@@ -71,6 +100,29 @@ def download_youtube_ingestion(metadata):
     except Exception as e:
         print(f"❌ Error al iniciar descarga del video ID '{video_id}': {e}")
         conn.rollback()
+
+def confirm_youtube_data(video_id, video_title):
+    # query para obtener metadata de la DB y confirmar que los datos del video descargado hagan match con el json 
+    try:
+        metaData = [file for file in os.listdir(storage_audio_path) if file.endswith('.json')]
+        if video_title+ '.info.json' in metaData:
+            file_path = os.path.join(storage_audio_path, video_title + '.info.json')
+            # Leemos el archivo JSON para obtener información adicional del video
+            # utf-8 para evitar problemas con caracteres especiales en los títulos
+            with open(file_path, 'r',encoding='utf-8') as f: 
+                meta_info = json.load(f)
+                video_id_json = meta_info.get('id')
+                video_title_json = meta_info.get('title')
+                video_url_json = meta_info.get('url')
+                video_duration_json = meta_info.get('duration')
+                video_view_count_json = meta_info.get('view_count')
+                channel_id_json = meta_info.get('channel_id')
+                channel_name_json = meta_info.get('channel_name')
+    except Exception as e:
+        print(f"Error al leer metadata para: {video_title}: {e}")
+
+def get_confirmed_videos():
+    pass
 
 def process_youtube_ingestion(metadata, transcription):
     print(f"Inciando proceso de transcripción de videos")
@@ -92,17 +144,19 @@ def process_youtube_ingestion(metadata, transcription):
         print(f"❌ Error al procesar transcripción de videos: {e}")
         conn.rollback()
 
+
+
 # flow text:
-# pending -> downloaded -> processed -> summary -> vector -> learning -> completed 
+# pending -> downloaded -> validate -> processed -> summary -> vector -> learning -> completed 
 # error
 
 
 if __name__ == "__main__":
     # Ejemplo de uso
     sample_metadata = {
-        'video_id': 'abc123',
+        'video_id': '2',
         'url': 'https://www.youtube.com/watch?v=abc1232',
-        'title': 'Ejemplo de Video2',     
+        'title': 'halo 2',     
         'duration': 300,
         'view_count': 1000,
         'channel_id': 'channel1232',
@@ -112,6 +166,8 @@ if __name__ == "__main__":
         'upload_date': '2024-01-02'
     }
     #register_youtube_ingestion(sample_metadata)
+    status = get_video_by_status('pending')
+    print(f"Videos pendientes: {status}")
     #download_youtube_ingestion(sample_metadata)
-    process_youtube_ingestion(sample_metadata, "Transcripción de ejemplo para el video.")
+    #process_youtube_ingestion(sample_metadata, "Transcripción de ejemplo para el video.")
 
