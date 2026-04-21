@@ -1,6 +1,6 @@
 from app.Youtube_Extractor.Service.youtube_service import get_videos_from_youtube_channel, download_audio
 from app.Youtube_Extractor.Service.transcription_service import transcribe_audio
-from app.Youtube_Extractor.Database.database_manager import register_youtube_ingestion,db_get_videos_by_status,download_youtube_ingestion,process_youtube_ingestion
+from app.Youtube_Extractor.Database.database_manager import register_youtube_ingestion,db_get_videos_by_status,download_youtube_ingestion,process_youtube_ingestion,validate_youtube_video,error_youtube_ingestion
 from app.Youtube_Extractor.Validate_Data.integrity_data import validate_video_metadata
 
 if __name__ == "__main__":
@@ -15,6 +15,7 @@ if __name__ == "__main__":
             if register_youtube_ingestion(video):
                 print(f"✅ Registrado: {video['title']}")
             else:
+                error_youtube_ingestion(video['video_id'], "Error al registrar video en DB.")
                 print(f"❌ Error al registrar: {video['title']}")
     print(f"✅ Videos obtenidos del canal: {len(videos_channel)} with details: {videos_channel}")
     print("✅ Proceso de ingestión de videos de YouTube completado.")
@@ -38,8 +39,13 @@ if __name__ == "__main__":
                     
                     # Validación de integridad
                     if validate_video_metadata(video_id): # Sugerencia: validar por video_id si es posible
-                        print(f"✅ Validación exitosa.")
+                        if validate_youtube_video(video_id): # Cambia a video_id si tu función lo soporta
+                            print(f"✅ Validación exitosa.")
+                        else:
+                            error_youtube_ingestion(video_id, "Error en validación de video en DB.")
+                            print(f"❌ Falló validación de video en db.")
                     else:
+                        error_youtube_ingestion(video_id, "Error en validación de integridad.")
                         print(f"❌ Falló validación de integridad.")
             else:
                 print(f"⚠️ El video: {title} (ID: {video_id}) no se descargó correctamente, por lo que se omite la validación.")
@@ -60,11 +66,17 @@ if __name__ == "__main__":
             if process_youtube_ingestion(video_id, texto):
                 print(f"✅ Transcripción procesada y finalizada.")
             else:
+                error_youtube_ingestion(video_id, "Error al guardar transcripción en DB.")
                 print(f"❌ Error al guardar transcripción en DB.")
         else:
+            error_youtube_ingestion(video_id, "Error: La transcripción volvió vacía.")
             print(f"❌ Error: La transcripción volvió vacía.")
 
     print("🏁 Proceso completado.")
+
+
+    # 4. Crear resumen del texto 
+    
 
             
         

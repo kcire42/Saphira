@@ -87,10 +87,9 @@ def db_get_videos_by_status(status):
         conn.close()
     
 
-def download_youtube_ingestion(metadata):
+def download_youtube_ingestion(video_id):
     print(f"→ Iniciando descarga del video")  
     conn = get_connection()
-    video_id = str(metadata) 
     try:
         with conn.cursor() as cur:
             cur.execute("""CALL 
@@ -109,14 +108,13 @@ def download_youtube_ingestion(metadata):
     finally:
         conn.close()
 
-def validate_youtube_video(metadata):
-    print(f"→ Iniciando validación de integridad para el video ID: {metadata}")
+def validate_youtube_video(video_id):
+    print(f"→ Iniciando validación de integridad para el video ID: {video_id}")
     conn = get_connection()
-    video_id = str(metadata)
     try:
         with conn.cursor() as cur:
             cur.execute("""CALL
-                    "youtube.validate_youtube_video(
+                    "youtube".validate_youtube_video(
                     p_video_id := %s::text
                     )""", (video_id,))
         conn.commit()
@@ -205,10 +203,9 @@ def get_video_metadata(video_id):
     finally:
         conn.close()
 
-def process_youtube_ingestion(metadata, transcription):
+def process_youtube_ingestion(video_id, transcription):
     print(f"Inciando proceso de transcripción de videos")
     conn = get_connection()
-    video_id = str(metadata.get('video_id'))
     try:
         with conn.cursor() as cur:
             cur.execute("""CALL 
@@ -229,8 +226,7 @@ def process_youtube_ingestion(metadata, transcription):
     finally:
         conn.close()
 
-def error_youtube_ingestion(metadata, error_message):
-    video_id = str(metadata)
+def error_youtube_ingestion(video_id, error_message):
     print(f"→ Registrando error para el video ID: {video_id}")
     conn = get_connection()
     try:

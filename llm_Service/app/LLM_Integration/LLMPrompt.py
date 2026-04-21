@@ -6,6 +6,22 @@ def getLLMResponse(prompt: str) -> str:
     answer = routeAnswerToLLM(prompt)
     return answer
 
+def getLLMtextSummary(text: str) -> str:
+    summaryPrompt = f"""
+    Eres un asistente de resumen de texto. Tu tarea es condensar el siguiente texto en un resumen claro y conciso, destacando los puntos clave y eliminando información redundante.
+
+    Texto a resumir:
+    {text}
+
+    Instrucciones:
+    - Crea un resumen que capture la esencia del texto.
+    - Mantén la coherencia y el flujo natural.
+    - Evita incluir detalles menores o ejemplos específicos a menos que sean cruciales para la comprensión general.
+
+    Resumen:
+    """
+    return callLLM(summaryPrompt.format(text=text))
+
 def routeQuestionToLLM(prompt: str) -> str:
     ROUTER_PROMPT = """
     Eres el clasificador de intención de un asistente personal inteligente.
