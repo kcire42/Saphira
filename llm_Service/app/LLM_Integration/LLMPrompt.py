@@ -1,28 +1,12 @@
-import requests
-from .config import OLLAMA_API_URL, MODEL_NAME , REQUEST_TIMEOUT_SECONDS
-from app.LLMGetInfo.doc.getLLMContext import getdocContext
+from llm_Service.app.LLM_Integration.Call_LLM import selectLLM
 
-def getLLMResponse(prompt: str) -> str:
-    answer = routeAnswerToLLM(prompt)
+
+def getLLMResponse(prompt: str,llmResource: bool = False) -> str:
+    answer = routeAnswerToLLM(prompt, llmResource=llmResource)
     return answer
 
-def getLLMtextSummary(text: str) -> str:
-    summaryPrompt = f"""
-    Eres un asistente de resumen de texto. Tu tarea es condensar el siguiente texto en un resumen claro y conciso, destacando los puntos clave y eliminando información redundante.
 
-    Texto a resumir:
-    {text}
-
-    Instrucciones:
-    - Crea un resumen que capture la esencia del texto.
-    - Mantén la coherencia y el flujo natural.
-    - Evita incluir detalles menores o ejemplos específicos a menos que sean cruciales para la comprensión general.
-
-    Resumen:
-    """
-    return callLLM(summaryPrompt.format(text=text))
-
-def routeQuestionToLLM(prompt: str) -> str:
+def routeQuestionToLLM(prompt: str,llmResource: bool = False) -> str:
     ROUTER_PROMPT = """
     Eres el clasificador de intención de un asistente personal inteligente.
     Tu trabajo es dirigir la duda del usuario a la fuente de datos correcta.
@@ -39,23 +23,24 @@ def routeQuestionToLLM(prompt: str) -> str:
     - Responde ÚNICAMENTE con una de las tres palabras: RAG_ONLY, SQL_ONLY, o HYBRID.
     - Sin puntos ni explicaciones.
     """
-    response = callLLM(ROUTER_PROMPT.format(prompt=prompt))
+    response = selectLLM(ROUTER_PROMPT.format(prompt=prompt), llmResource=llmResource)
     return response
 
-def routeAnswerToLLM(prompt: str) -> str:
-    data = routeQuestionToLLM(prompt)  
+
+def routeAnswerToLLM(prompt: str, llmResource: bool = False) -> str:
+    data = routeQuestionToLLM(prompt, llmResource=llmResource)
     route = data.get("response").strip()
     if route == "RAG_ONLY":
-        return ragAnswerToLLM(prompt)
+        return ragAnswerToLLM(prompt, llmResource=llmResource)
     elif route == "SQL_ONLY":
-        return sqlAnswerToLLM(prompt)
+        return sqlAnswerToLLM(prompt, llmResource=llmResource)
     elif route == "HYBRID":
-        return hybridAnswerToLLM(prompt)
+        return hybridAnswerToLLM(prompt, llmResource=llmResource)
     raise ValueError(f"Unknown route: {route}")
 
 
-def ragAnswerToLLM(prompt: str) -> str:
-    docContext = getdocContext(prompt)
+def ragAnswerToLLM(prompt: str, llmResource: bool = False) -> str:
+    docContext = ''#getdocContext(prompt)
     RAGPrompt = f"""
     Eres mi asistente personal y mentor. Tu tono es cálido, alentador y organizado.
         
@@ -76,9 +61,10 @@ def ragAnswerToLLM(prompt: str) -> str:
     1. Punto uno
     2. Punto dos...
     """
-    return callLLM(RAGPrompt)
+    response = selectLLM(RAGPrompt.format(prompt=prompt), llmResource=llmResource)
+    return response
 
-def sqlAnswerToLLM(prompt: str) -> str:
+def sqlAnswerToLLM(prompt: str, llmResource: bool = False) -> str:
     sqlResults = "Sample SQL data results relevant to the question."
     SQLPrompt = f"""
     Eres mi analista de datos personales. 
@@ -93,10 +79,11 @@ def sqlAnswerToLLM(prompt: str) -> str:
     Pregunta:
     {prompt}
     """
-    return callLLM(SQLPrompt)
+    response = selectLLM(SQLPrompt.format(prompt=prompt), llmResource=llmResource)
+    return response
 
-def hybridAnswerToLLM(prompt: str) -> str:
-    docContext = getdocContext(prompt)
+def hybridAnswerToLLM(prompt: str, llmResource: bool = False) -> str:
+    docContext = ''#getdocContext(prompt)
     sqlResults = "Sample SQL data results relevant to the question."
     hybridPrompt = f"""
     Eres mi Coach de Vida. Tu objetivo es conectar lo que siento (notas) con lo que hago (datos).
@@ -115,27 +102,25 @@ def hybridAnswerToLLM(prompt: str) -> str:
     Pregunta del usuario:
     {prompt}
     """
-    return callLLM(hybridPrompt)
+    response = selectLLM(hybridPrompt.format(prompt=prompt), llmResource=llmResource)
+    return response
 
 
-def callLLM(prompt: str) -> str:
-    payload = {
-        "model": MODEL_NAME,
-        "prompt": prompt,
-        "stream": False,
-        "options": {
-            "temperature": 0.2,
-            "num_predict": 250
-        }
-    }
+def getLLMtextSummary(text: str, llmResource: bool = False) -> str:
+    summaryPrompt = f"""
+    Eres un asistente de resumen de texto. Tu tarea es condensar el siguiente texto en un resumen claro y conciso, destacando los puntos clave y eliminando información redundante.
 
-    response = requests.post(OLLAMA_API_URL, json=payload, timeout=REQUEST_TIMEOUT_SECONDS)
-    response.raise_for_status()
-    data = response.json()
+    Texto a resumir:
+    {text}
 
-    return {
-        "response": data.get("response", ""),
-        "prompt_tokens": data.get("prompt_eval_count", 0),
-        "completion_tokens": data.get("eval_count", 0),
-        "total_duration": data.get("total_duration", 0)
-    }
+    Instrucciones:
+    - Crea un resumen que capture la esencia del texto.
+    - Mantén la coherencia y el flujo natural.
+    - Evita incluir detalles menores o ejemplos específicos a menos que sean cruciales para la comprensión general.
+
+    Resumen:
+    """
+    response = selectLLM(summaryPrompt.format(text=text), llmResource=llmResource)
+    return response
+
+

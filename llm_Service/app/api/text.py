@@ -10,7 +10,7 @@ async def summarize_text(text: str):
     LLM_REQUESTS.inc()  # Incrementar el contador de requests
     with LLM_RESPONSE_TIME.time():  # Medir el tiempo de respuesta
         try:
-            result = getLLMtextSummary(text)
+            result = getLLMtextSummary(text, llmResource=False)  # Cambia a True para usar el LLM en la nube
             answer = result.get("response", "")
             LLM_PROMPT_TOKENS.inc(result["prompt_tokens"])
             LLM_COMPLETION_TOKENS.inc(result["completion_tokens"])
