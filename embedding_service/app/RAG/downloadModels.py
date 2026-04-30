@@ -1,5 +1,5 @@
 import os
-from .config import EMBEDDING_MODEL_NAME
+from ....llm_Service.app.LLM_Integration.config import EMBEDDING_MODEL_NAME
 from sentence_transformers import SentenceTransformer
 
 def download():

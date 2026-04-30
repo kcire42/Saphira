@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request
 from app.api.prompt import questionRouter
-from app.api.train import trainRouter
+from embedding_service.app.RAG.train import trainRouter
 from app.api.text import textRouter
 from prometheus_fastapi_instrumentator import Instrumentator
 import logging

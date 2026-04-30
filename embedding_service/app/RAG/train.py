@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.RAG.trainData import trainRagData
+from embedding_service.app.RAG.trainData import trainRagData
 
 trainRouter = APIRouter(prefix='/train')
 
