@@ -2,9 +2,12 @@ import requests
 import os
 from dotenv import load_dotenv
 from pathlib import Path
-from .config import OLLAMA_API_URL, MODEL_NAME , REQUEST_TIMEOUT_SECONDS
+from .config import OLLAMA_API_URL, LOCAL_MODEL_NAME, CLOUD_MODEL_NAME, REQUEST_TIMEOUT_SECONDS
 from google import genai
 from google.genai import types
+from app.Local_Model.LocalClient import LocalClient
+
+saphira_local_client = LocalClient()
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent.parent
 
@@ -17,31 +20,21 @@ def selectLLM(prompt: str, llmResource:bool = False) -> str:
     Función para seleccionar entre LLM local (Ollama) o en la nube (Gemini).
     Por defecto, se utiliza el LLM local. Si llmType es True, se llama al LLM en la nube.
     """
+    print(f"LLM Resource Selected: llmResource={llmResource}")
     if llmResource:
         return callLLM_Cloud(prompt)
     else:
         return callLLM_Local(prompt)
 
 def callLLM_Local(prompt: str) -> str:
-    payload = {
-        "model": MODEL_NAME,
-        "prompt": prompt,
-        "stream": False,
-        "options": {
-            "temperature": 0.2,
-            "num_predict": 250
-        }
-    }
 
-    response = requests.post(OLLAMA_API_URL, json=payload, timeout=REQUEST_TIMEOUT_SECONDS)
-    response.raise_for_status()
-    data = response.json()
-
+    response = saphira_local_client.generate(prompt)
+    # ollama regresa un dicrionario 
     return {
-        "response": data.get("response", ""),
-        "prompt_tokens": data.get("prompt_eval_count", 0),
-        "completion_tokens": data.get("eval_count", 0),
-        "total_duration": data.get("total_duration", 0)
+        "response": response.text, # Extrae el texto principal
+        "prompt_tokens": response.prompt_tokens, # Extrae el conteo de tokens del prompt
+        "completion_tokens": response.completion_tokens, # Extrae el conteo de tokens de la respuesta
+        "total_duration": response.total_duration # Extrae la duración total de la generación
     }
 
 def callLLM_Cloud(prompt: str) -> str:
@@ -52,7 +45,7 @@ def callLLM_Cloud(prompt: str) -> str:
     try:
         # Inicialización del cliente
         client = genai.Client(api_key=os.getenv("API_KEY"))
-        model_id = os.getenv("MODEL_NAME", "gemini-2.5-flash")
+        model_id = os.getenv("CLOUD_MODEL_NAME", "gemini-2.5-flash")
 
         # Generación de contenido
         response = client.models.generate_content(
@@ -64,9 +57,14 @@ def callLLM_Cloud(prompt: str) -> str:
                 max_output_tokens=2048,
             )
         )
-
-        # Es crucial retornar .text para obtener solo el string de respuesta
-        return response.text
+        print(f"Gemini API Response: {response}")
+        #gemini regresa un objeto 
+        return {
+            "response": response.text, # Extrae el texto principal
+            "prompt_tokens": response.usage_metadata.prompt_token_count if response.usage_metadata else 0,
+            "completion_tokens": response.usage_metadata.candidates_token_count if response.usage_metadata else 0,
+            "total_duration": 0 # Google no devuelve duración total en el metadata de tokens
+        }
 
     except Exception as e:
         return f"Error al llamar a la API: {str(e)}"

@@ -6,11 +6,11 @@ questionRouter = APIRouter(prefix='/ask')
 
 
 @questionRouter.post('/')
-async def ask_question(prompt: str):
+async def ask_question(prompt: str, llmResource: bool = False):
     LLM_REQUESTS.inc()  # Incrementar el contador de requests
     with LLM_RESPONSE_TIME.time():  # Medir el tiempo de respuesta
         try:
-            result = getLLMResponse(prompt, llmResource=False)  # Cambia a True para usar el LLM en la nube
+            result = getLLMResponse(prompt, llmResource=llmResource)
             answer = result.get("response", "")
             LLM_PROMPT_TOKENS.inc(result["prompt_tokens"])
             LLM_COMPLETION_TOKENS.inc(result["completion_tokens"])

@@ -1,12 +1,12 @@
-from llm_Service.app.LLM_Integration.Call_LLM import selectLLM
+from app.LLM_Integration.Call_LLM import selectLLM
 
 
-def getLLMResponse(prompt: str,llmResource: bool = False) -> str:
+def getLLMResponse(prompt: str,llmResource: bool = False) -> dict:
     answer = routeAnswerToLLM(prompt, llmResource=llmResource)
     return answer
 
 
-def routeQuestionToLLM(prompt: str,llmResource: bool = False) -> str:
+def routeQuestionToLLM(prompt: str,llmResource: bool = False) -> dict:
     ROUTER_PROMPT = """
     Eres el clasificador de intención de un asistente personal inteligente.
     Tu trabajo es dirigir la duda del usuario a la fuente de datos correcta.
@@ -24,11 +24,14 @@ def routeQuestionToLLM(prompt: str,llmResource: bool = False) -> str:
     - Sin puntos ni explicaciones.
     """
     response = selectLLM(ROUTER_PROMPT.format(prompt=prompt), llmResource=llmResource)
+    print(f"LLM Router Response: {response}")
     return response
+    
 
 
-def routeAnswerToLLM(prompt: str, llmResource: bool = False) -> str:
+def routeAnswerToLLM(prompt: str, llmResource: bool = False) -> dict:
     data = routeQuestionToLLM(prompt, llmResource=llmResource)
+    print(f"Routing decision: {data}")
     route = data.get("response").strip()
     if route == "RAG_ONLY":
         return ragAnswerToLLM(prompt, llmResource=llmResource)
@@ -39,7 +42,7 @@ def routeAnswerToLLM(prompt: str, llmResource: bool = False) -> str:
     raise ValueError(f"Unknown route: {route}")
 
 
-def ragAnswerToLLM(prompt: str, llmResource: bool = False) -> str:
+def ragAnswerToLLM(prompt: str, llmResource: bool = False) -> dict:
     docContext = ''#getdocContext(prompt)
     RAGPrompt = f"""
     Eres mi asistente personal y mentor. Tu tono es cálido, alentador y organizado.
@@ -64,7 +67,7 @@ def ragAnswerToLLM(prompt: str, llmResource: bool = False) -> str:
     response = selectLLM(RAGPrompt.format(prompt=prompt), llmResource=llmResource)
     return response
 
-def sqlAnswerToLLM(prompt: str, llmResource: bool = False) -> str:
+def sqlAnswerToLLM(prompt: str, llmResource: bool = False) -> dict:
     sqlResults = "Sample SQL data results relevant to the question."
     SQLPrompt = f"""
     Eres mi analista de datos personales. 
@@ -82,7 +85,7 @@ def sqlAnswerToLLM(prompt: str, llmResource: bool = False) -> str:
     response = selectLLM(SQLPrompt.format(prompt=prompt), llmResource=llmResource)
     return response
 
-def hybridAnswerToLLM(prompt: str, llmResource: bool = False) -> str:
+def hybridAnswerToLLM(prompt: str, llmResource: bool = False) -> dict:
     docContext = ''#getdocContext(prompt)
     sqlResults = "Sample SQL data results relevant to the question."
     hybridPrompt = f"""
@@ -106,7 +109,7 @@ def hybridAnswerToLLM(prompt: str, llmResource: bool = False) -> str:
     return response
 
 
-def getLLMtextSummary(text: str, llmResource: bool = False) -> str:
+def getLLMtextSummary(text: str, llmResource: bool = False) -> dict:
     summaryPrompt = f"""
     Eres un asistente de resumen de texto. Tu tarea es condensar el siguiente texto en un resumen claro y conciso, destacando los puntos clave y eliminando información redundante.
 

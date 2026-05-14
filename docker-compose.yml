@@ -50,7 +50,7 @@ services:
       - frontend_tools
       - backend_ai
 
-  portainer: #http://100.76.141.48:9443/
+  portainer: #http://100.76.141.48:9443/ Interfaz de gestión de contenedores Docker, útil para monitorear y administrar tus servicios de forma visual. Puedes acceder a ella en https://localhost:9443/ (o reemplaza localhost por la IP de tu máquina si estás accediendo desde otra). Es una herramienta muy útil para ver el estado de tus contenedores, logs, estadísticas de uso, etc.
     image: portainer/portainer-ce:latest
     container_name: portainer
     restart: always
@@ -207,6 +207,23 @@ services:
       - elasticsearch
     networks:
       - backend_ai
+  
+  embedding_service:
+    build: 
+      context: ./embedding_service
+      dockerfile: Dockerfile
+    container_name: embedding_service
+    restart: always
+    ports:
+      - "8002:8000"
+    environment:
+      - MODEL_NAME=${EMBEDING_MODEL} # Modelo ligero y rápido
+      - DEVICE=cpu # Para Docker en Mac, CPU es lo más estable; MPS requiere config avanzada
+    volumes:
+      - ./embedding_service:/app
+      # - cache_models:/root/.cache/torch # Para no descargar el modelo cada vez que reinicies
+    networks:
+      - backend_ai
 
   # --- SERVICIOS DE LLM Y VECTOR DB 
 
@@ -284,6 +301,7 @@ volumes:
   grafana_data:
   caddy_data:
   caddy_config:
+ # cache_models:
 
 
 networks:

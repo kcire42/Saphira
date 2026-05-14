@@ -25,7 +25,7 @@ COPY . .
 
 # 5. Verify cache and download LLM models
 
-RUN python -m app.LLM_Integration.downloadModels
+#RUN python -m app.LLM_Integration.downloadModels
 
 EXPOSE 8000
 
