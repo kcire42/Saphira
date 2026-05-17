@@ -13,12 +13,12 @@ async def summarize_text(request: TextRequest):
         try:
             result = getLLMtextSummary(request.text, llmResource=request.llm_resource)  # Cambia a True para usar el LLM en la nube
             print(f"✅ Resultado del LLM: {result}")
-            answer = result.get("response", "")
+            text = result.get("text", "")
             LLM_PROMPT_TOKENS.inc(result["prompt_tokens"])
             LLM_COMPLETION_TOKENS.inc(result["completion_tokens"])
 
             return {
-                "response": answer,
+                "text": text,
                 "usage": {
                     "prompt_tokens": result["prompt_tokens"],
                     "completion_tokens": result["completion_tokens"]

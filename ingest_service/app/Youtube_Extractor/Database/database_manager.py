@@ -252,6 +252,30 @@ def process_youtube_ingestion(video_id, transcription):
     finally:
         conn.close()
 
+
+def summary_youtube_ingestion(video_id, summary):
+    print(f"Inciando proceso de resumen de videos")
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""CALL 
+                        "youtube".summary_youtube_ingestion(
+                        p_video_id := %s::text,
+                        p_summary := %s::text
+                        )""",(
+                        video_id, 
+                        str(summary)
+                            ))
+        conn.commit()
+        print(f"✅ Proceso de resumen de videos completado.")
+        return True
+    except Exception as e:
+        print(f"❌ Error al procesar resumen de videos: {e}")
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
+
 def error_youtube_ingestion(video_id, error_message):
     print(f"→ Registrando error para el video ID: {video_id}")
     conn = get_connection()

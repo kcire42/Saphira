@@ -1,6 +1,6 @@
 from app.Youtube_Extractor.Service.youtube_service import get_videos_from_youtube_channel, download_audio
 from app.Youtube_Extractor.Service.transcription_service import transcribe_audio
-from app.Youtube_Extractor.Database.database_manager import register_youtube_ingestion,db_get_videos_by_status,download_youtube_ingestion,process_youtube_ingestion,validate_youtube_video,get_video_metadata,error_youtube_ingestion,get_video_content
+from app.Youtube_Extractor.Database.database_manager import *
 from app.Youtube_Extractor.Validate_Data.integrity_data import validate_video_metadata
 from app.Youtube_Extractor.Service.summary_service import get_summary_from_llm
 import asyncio
@@ -87,7 +87,20 @@ if __name__ == "__main__":
         print(f"✅ Contenido del video {video_content.get('transcription')[:30]}...")
         if video_content.get('transcription'):
             summary = asyncio.run(get_summary_from_llm(video_content.get('transcription')))
-            print(f"✅ Resumen del video {summary}...")
+            if summary:
+                print(f"✅ Resumen del video {summary}...")
+                summary_status = summary_youtube_ingestion(video_id, summary)
+                if summary_status:
+                    print(f"✅ Resumen guardado y estado actualizado.")
+                else:
+                    error_youtube_ingestion(video_id, "Error al guardar resumen en DB.")
+                    print(f"❌ Error al guardar resumen en DB.")
+            else:
+                error_youtube_ingestion(video_id, "Error al obtener resumen del LLM Service.")
+                print(f"❌ Error al obtener resumen del LLM Service.")
+        else:
+            error_youtube_ingestion(video_id, "Error: No se encontró transcripción para resumir.")
+            print(f"❌ Error: No se encontró transcripción para resumir.")
 
 
     

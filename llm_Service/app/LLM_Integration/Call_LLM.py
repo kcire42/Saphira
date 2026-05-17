@@ -31,7 +31,7 @@ def callLLM_Local(prompt: str) -> str:
         response = saphira_local_client.generate(prompt)
         print(f"Ollama API Response: {response.raw}")
         return {
-            "response": response.text, # Extrae el texto principal
+            "text": response.text, # Extrae el texto principal
             "prompt_tokens": response.prompt_tokens, # Extrae el conteo de tokens del prompt
             "completion_tokens": response.completion_tokens, # Extrae el conteo de tokens de la respuesta
             "total_duration": response.total_duration # Extrae la duración total de la generación
@@ -47,7 +47,7 @@ def callLLM_Cloud(prompt: str) -> str:
     try:
         # Inicialización del cliente
         client = genai.Client(api_key=os.getenv("API_KEY"))
-        model_id = os.getenv("CLOUD_MODEL_NAME", "gemini-2.5-flash")
+        model_id = os.getenv("CLOUD_MODEL_NAME", "gemini-3.1-flash-lite")
 
         # Generación de contenido
         response = client.models.generate_content(
@@ -62,7 +62,7 @@ def callLLM_Cloud(prompt: str) -> str:
         print(f"Gemini API Response: {response}")
         #gemini regresa un objeto 
         return {
-            "response": response.text, # Extrae el texto principal
+            "text": response.text, # Extrae el texto principal
             "prompt_tokens": response.usage_metadata.prompt_token_count if response.usage_metadata else 0,
             "completion_tokens": response.usage_metadata.candidates_token_count if response.usage_metadata else 0,
             "total_duration": 0 # Google no devuelve duración total en el metadata de tokens
