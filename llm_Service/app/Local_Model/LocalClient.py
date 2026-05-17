@@ -27,11 +27,12 @@ class LocalClient:
     def _post(self, endpoint, data):
         """Método privado para manejar la comunicación sucia."""
         url = f"{self.base_url}{endpoint}"
+        
         try:
             response = self.session.post(
                 url, 
                 headers=self.headers, 
-                data=json.dumps(data),
+                json=data,
                 timeout=REQUEST_TIMEOUT_SECONDS # Ollama puede tardar en pensar
             )
             response.raise_for_status()

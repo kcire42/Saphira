@@ -27,15 +27,17 @@ def selectLLM(prompt: str, llmResource:bool = False) -> str:
         return callLLM_Local(prompt)
 
 def callLLM_Local(prompt: str) -> str:
-
-    response = saphira_local_client.generate(prompt)
-    # ollama regresa un dicrionario 
-    return {
-        "response": response.text, # Extrae el texto principal
-        "prompt_tokens": response.prompt_tokens, # Extrae el conteo de tokens del prompt
-        "completion_tokens": response.completion_tokens, # Extrae el conteo de tokens de la respuesta
-        "total_duration": response.total_duration # Extrae la duración total de la generación
-    }
+    try:
+        response = saphira_local_client.generate(prompt)
+        print(f"Ollama API Response: {response.raw}")
+        return {
+            "response": response.text, # Extrae el texto principal
+            "prompt_tokens": response.prompt_tokens, # Extrae el conteo de tokens del prompt
+            "completion_tokens": response.completion_tokens, # Extrae el conteo de tokens de la respuesta
+            "total_duration": response.total_duration # Extrae la duración total de la generación
+        }
+    except Exception as e:
+        return f"Error al llamar a Ollama: {str(e)}"
 
 def callLLM_Cloud(prompt: str) -> str:
     """

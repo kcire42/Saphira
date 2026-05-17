@@ -8,11 +8,12 @@ async def get_summary_from_llm(transcription_text: str):
     """Envía la transcripción al LLM Service para obtener un resumen."""
     async with httpx.AsyncClient(timeout=60.0) as client: # Timeout largo por ser un LLM
         try:
-            response = await client.post(settings.LLM_SERVICE_URL, params=transcription_text)
+            response = await client.post(settings.LLM_SERVICE_URL, json={"text": transcription_text,"llm_resource": False })
             response.raise_for_status()
             
             data = response.json()
-            return data.get("answer")
+            print(f"✅ Respuesta del LLM Service: {data}")
+            return data.get("response")
             
         except httpx.HTTPStatusError as e:
             logger.error(f"Error del LLM Service: {e.response.status_code}")

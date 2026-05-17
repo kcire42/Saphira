@@ -203,6 +203,32 @@ def get_video_metadata(video_id):
     finally:
         conn.close()
 
+def get_video_content(video_id):
+    """
+    Obtiene el contenido de un video desde la base de datos.
+    
+    Returns:
+        dict con keys: video_id, transcription, summary
+        [] si no se encuentra o hay un error
+    """
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                        SELECT *
+                        FROM
+                        "youtube".get_video_content(
+                        p_video_id := %s::text
+                        )""", (video_id,))
+            video_content = cur.fetchone()
+        print(f"✅ Contenido obtenido para {video_id}")
+        return { 'video_id': video_content[0], 'transcription': video_content[2] , 'summary': video_content[1] }
+    except Exception as e:
+        print(f"❌ Error al obtener contenido para {video_id}: {e}")
+        return []
+    finally:
+        conn.close()
+
 def process_youtube_ingestion(video_id, transcription):
     print(f"Inciando proceso de transcripción de videos")
     conn = get_connection()

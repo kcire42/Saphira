@@ -68,10 +68,16 @@ services:
       context: ./ingest_service
       dockerfile: Dockerfile
     container_name: ingestion_service
+    environment:
+      - POSTGRES_HOST=postgres_service  
+      - LLM_SERVICE_URL=http://web:8000/text/
     volumes:
+      - ./ingest_service:/app 
       - ./storage/raw:/app/storage/raw
     networks:
       - backend_ai
+    env_file:
+      - .env
   # --- Clean Process Service
   clean_service:
     build: 

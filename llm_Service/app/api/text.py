@@ -1,22 +1,24 @@
 from fastapi import APIRouter
 from app.LLM_Integration.LLMPrompt import getLLMtextSummary
 from app.api.monitor import LLM_REQUESTS, LLM_ERRORS, LLM_RESPONSE_TIME, LLM_PROMPT_TOKENS, LLM_COMPLETION_TOKENS
+from app.api.baseModel import TextRequest
 
 textRouter = APIRouter(prefix='/text')
 
 
 @textRouter.post('/')
-async def summarize_text(text: str):
+async def summarize_text(request: TextRequest):
     LLM_REQUESTS.inc()  # Incrementar el contador de requests
     with LLM_RESPONSE_TIME.time():  # Medir el tiempo de respuesta
         try:
-            result = getLLMtextSummary(text, llmResource=False)  # Cambia a True para usar el LLM en la nube
+            result = getLLMtextSummary(request.text, llmResource=request.llm_resource)  # Cambia a True para usar el LLM en la nube
+            print(f"✅ Resultado del LLM: {result}")
             answer = result.get("response", "")
             LLM_PROMPT_TOKENS.inc(result["prompt_tokens"])
             LLM_COMPLETION_TOKENS.inc(result["completion_tokens"])
 
             return {
-                "answer": answer,
+                "response": answer,
                 "usage": {
                     "prompt_tokens": result["prompt_tokens"],
                     "completion_tokens": result["completion_tokens"]

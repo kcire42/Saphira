@@ -4,3 +4,4 @@ tqdm
 whisper
 psycopg2-binary
 dotenv
+httpx
