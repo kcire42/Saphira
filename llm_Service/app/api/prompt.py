@@ -11,7 +11,7 @@ async def ask_question(prompt: str, llmResource: bool = False):
     with LLM_RESPONSE_TIME.time():  # Medir el tiempo de respuesta
         try:
             result = getLLMResponse(prompt, llmResource=llmResource)
-            answer = result.get("response", "")
+            answer = result.get("text", "")
             LLM_PROMPT_TOKENS.inc(result["prompt_tokens"])
             LLM_COMPLETION_TOKENS.inc(result["completion_tokens"])
 

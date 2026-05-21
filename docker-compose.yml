@@ -296,6 +296,11 @@ services:
       - MODEL_NAME=${MODEL_NAME}
       - PYTHONPATH=/app
       - LOG_LEVEL=DEBUG
+      - POSTGRES_HOST=postgres_service
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     depends_on:
       #ollama:
       #  condition: service_started

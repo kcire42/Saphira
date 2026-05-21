@@ -32,7 +32,7 @@ def routeQuestionToLLM(prompt: str,llmResource: bool = False) -> dict:
 def routeAnswerToLLM(prompt: str, llmResource: bool = False) -> dict:
     data = routeQuestionToLLM(prompt, llmResource=llmResource)
     print(f"Routing decision: {data}")
-    route = data.get("response").strip()
+    route = data.get("text", "").strip()
     if route == "RAG_ONLY":
         return ragAnswerToLLM(prompt, llmResource=llmResource)
     elif route == "SQL_ONLY":

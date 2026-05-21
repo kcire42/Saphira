@@ -2,6 +2,7 @@ from app.LLM_Integration.config import OLLAMA_API_URL, LOCAL_MODEL_NAME , REQUES
 
 import requests
 import json
+import os
 
 class LocalResponse:
     def __init__(self, json_data):
@@ -49,7 +50,7 @@ class LocalClient:
             "stream": False, # Desactivamos stream para recibir el JSON completo
                 "options": {
                 "temperature": 0.2,
-                "num_predict": 250
+                "num_predict": int(os.getenv("MAX_TOKENS", 2048))
             }
         }
         
