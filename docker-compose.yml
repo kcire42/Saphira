@@ -233,6 +233,8 @@ services:
       - MODEL_NAME=${EMBEDING_MODEL} # Modelo ligero y rápido
       - DEVICE=cpu # Para Docker en Mac, CPU es lo más estable; MPS requiere config avanzada
       - LOG_LEVEL=DEBUG
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
     volumes:
       - ./embedding_service:/app
       - ./shared:/app/shared
@@ -258,18 +260,19 @@ services:
   #   networks:
   #      - backend_ai
   
-  chroma:
-    image: chromadb/chroma
-    container_name: chroma_service
+  qdrant:
+    image: qdrant/qdrant
+    container_name: qdrant_service
     ports:
-      - "11743:8000"
+      - "6333:6333"   # REST API + Dashboard (http://localhost:6333/dashboard)
+      - "6334:6334"   # gRPC
     volumes:
-      - chroma_data:/chroma/data
+      - qdrant_data:/qdrant/storage
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          memory: 2G  # Suficiente para desarrollo local
+          memory: 2G
     networks:
        - backend_ai
 
@@ -289,7 +292,8 @@ services:
     environment:
       - APP_ENV=docker
       - OLLAMA_HOST=host.docker.internal # Permite que el contenedor acceda a Ollama en el host/ cambiar por ip cuando tengamos mac
-      - CHROMA_HOST=chroma
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - ELASTIC_HOST=http://elasticsearch:9200
@@ -304,7 +308,7 @@ services:
     depends_on:
       #ollama:
       #  condition: service_started
-      chroma:
+      qdrant:
         condition: service_started
       postgres_db:
         condition: service_healthy
@@ -315,7 +319,7 @@ services:
 
 volumes:
   #ollama_data:
-  chroma_data:
+  qdrant_data:
   postgres_data:
   portainer_data:
   redis_data:
