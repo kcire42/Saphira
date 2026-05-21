@@ -71,9 +71,13 @@ services:
     environment:
       - POSTGRES_HOST=postgres_service  
       - LLM_SERVICE_URL=http://web:8000/text/
+      - LOG_LEVEL=DEBUG
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
     volumes:
       - ./ingest_service:/app 
       - ./storage/raw:/app/storage/raw
+      - ./shared:/app/shared
     networks:
       - backend_ai
     env_file:
@@ -86,7 +90,9 @@ services:
     container_name: cleaning_service
     volumes:
       - ./storage/clean:/app/storage/process
-    #environment:
+      - ./shared:/app/shared
+    environment:
+      - LOG_LEVEL=DEBUG
     #  - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
     #  - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
     networks:
@@ -142,6 +148,7 @@ services:
     container_name: database_service
     volumes:
       - ./database_service:/app
+      - ./shared:/app/shared
     depends_on:
       postgres_db:
         condition: service_healthy
@@ -225,8 +232,10 @@ services:
     environment:
       - MODEL_NAME=${EMBEDING_MODEL} # Modelo ligero y rápido
       - DEVICE=cpu # Para Docker en Mac, CPU es lo más estable; MPS requiere config avanzada
+      - LOG_LEVEL=DEBUG
     volumes:
       - ./embedding_service:/app
+      - ./shared:/app/shared
       # - cache_models:/root/.cache/torch # Para no descargar el modelo cada vez que reinicies
     networks:
       - backend_ai
@@ -274,6 +283,7 @@ services:
       - '8000:8000'
     volumes:
       - ./llm_Service:/app
+      - ./shared:/app/shared
     extra_hosts:
       - "host.docker.internal:host-gateway" # Permite que el contenedor acceda a servicios en el host (como Ollama)
     environment:
@@ -285,6 +295,7 @@ services:
       - ELASTIC_HOST=http://elasticsearch:9200
       - MODEL_NAME=${MODEL_NAME}
       - PYTHONPATH=/app
+      - LOG_LEVEL=DEBUG
     depends_on:
       #ollama:
       #  condition: service_started

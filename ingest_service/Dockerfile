@@ -7,7 +7,13 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    ffmpeg \
+    nodejs \
     && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables to prevent Python from writing .pyc files and to ensure output is sent straight away (useful for logging)
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # 2. Copy only requirements first (optimizes Docker cache)
 COPY requirements.txt .

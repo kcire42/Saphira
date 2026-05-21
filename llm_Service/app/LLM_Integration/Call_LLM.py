@@ -6,6 +6,8 @@ from .config import OLLAMA_API_URL, LOCAL_MODEL_NAME, CLOUD_MODEL_NAME, REQUEST_
 from google import genai
 from google.genai import types
 from app.Local_Model.LocalClient import LocalClient
+from shared.logger_config import setup_logger
+
 
 saphira_local_client = LocalClient()
 
@@ -29,7 +31,7 @@ def selectLLM(prompt: str, llmResource:bool = False) -> str:
 def callLLM_Local(prompt: str) -> str:
     try:
         response = saphira_local_client.generate(prompt)
-        print(f"Ollama API Response: {response.raw}")
+        print(f"Ollama API Response: {response}")
         return {
             "text": response.text, # Extrae el texto principal
             "prompt_tokens": response.prompt_tokens, # Extrae el conteo de tokens del prompt
@@ -44,6 +46,7 @@ def callLLM_Cloud(prompt: str) -> str:
     Envía un prompt a la API de Gemini y retorna la respuesta de texto.
     Optimizada para la SDK v2 de Google GenAI.
     """
+    logger = setup_logger("call.LLM.Cloud")
     try:
         # Inicialización del cliente
         client = genai.Client(api_key=os.getenv("API_KEY"))
@@ -59,7 +62,7 @@ def callLLM_Cloud(prompt: str) -> str:
                 max_output_tokens=2048,
             )
         )
-        print(f"Gemini API Response: {response}")
+        logger.debug(f"Gemini API Response: {response}")
         #gemini regresa un objeto 
         return {
             "text": response.text, # Extrae el texto principal
@@ -69,5 +72,6 @@ def callLLM_Cloud(prompt: str) -> str:
         }
 
     except Exception as e:
+        logger.error(f"Error al llamar a Gemini API: {str(e)}")
         return f"Error al llamar a la API: {str(e)}"
         

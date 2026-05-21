@@ -1,7 +1,7 @@
 yt-dlp
 ffmpeg
 tqdm
-whisper
+openai-whisper
 psycopg2-binary
 dotenv
 httpx

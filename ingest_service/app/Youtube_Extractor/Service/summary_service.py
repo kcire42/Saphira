@@ -1,10 +1,12 @@
 import httpx
 import logging
 from app.config import settings
+from shared.logger_config import setup_logger
 
-logger = logging.getLogger("uvicorn")
+#logger = logging.getLogger("uvicorn")
 
 async def get_summary_from_llm(transcription_text: str):
+    logger = setup_logger("getSummaryFromLLM")
     """Envía la transcripción al LLM Service para obtener un resumen."""
     async with httpx.AsyncClient(timeout=60.0) as client: # Timeout largo por ser un LLM
         try:
@@ -12,7 +14,7 @@ async def get_summary_from_llm(transcription_text: str):
             response.raise_for_status()
             
             data = response.json()
-            print(f"✅ Respuesta del LLM Service: {data}")
+            logger.debug(f"✅ Respuesta del LLM Service: {data}")
             return data.get("text")
             
         except httpx.HTTPStatusError as e:
